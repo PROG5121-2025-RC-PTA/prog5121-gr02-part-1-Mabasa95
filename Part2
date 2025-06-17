@@ -1,0 +1,153 @@
+import javax.swing.*;
+import java.util.*;
+
+
+public class Mychatapp {
+  
+    //Chat fiels
+    private static boolean isLoggedin = true; //Changed to true for testing
+    private static final int MAX_MESSAGES =100;
+    private static Message[] sentMessages = new Message[MAX_MESSAGES];
+    private static int sentCount = 0;
+    private static int totalSent = 0;
+    
+    public static void main(String[] args) {
+         Scanner scanner = new Scanner(System.in);
+         while (true) {
+             displayMenu();
+             int choice = scanner.nextInt();
+             scanner.nextLine(); //Consume new line
+             switch (choice) {
+                 case 1:
+                     sendMessages(scanner);
+                     break;
+                 case 2:
+                     showRecentMessages();
+                     break;
+                 case 3:
+                     System.out.println("Invalid choice");
+             }
+         }
+    }
+
+    public static class Message {
+        private final String messageID;
+        private final String recipient;
+        private final String message;
+        private final String messageHash;
+        
+        public Message(String messageID, String recipient, String message, String messageHash) {
+            this.messageID = messageID;
+            this.recipient = recipient;
+            this.message = message;
+            this.messageHash = messageHash;
+        }
+        
+        public String getMessageID() {
+            return messageID;
+        } 
+        
+        public String getRecipient() {
+            return recipient;
+        } 
+        public String getMessage() {
+            return message;
+        } 
+        public String getMessageHash() {
+            return messageHash;
+        }
+    } 
+    private static void dispalyMenu() {
+        System.out.println("\nOptions: ");
+        System.out.println("1.Send Messages ");
+        System.out.println("2.Show Recently sent messages ");
+        System.out.println("3.Quit ");
+        System.out.println("Enter your choice: ");
+    }
+    
+    private static void sendMessages(Scanner scanner) {
+        if (!isLoggedin) {
+            System.out.println("You must be logged in to send messages.");
+            return;
+        } 
+        
+        System.out.println("Enter number of messages to send: ");
+        int num = scanner.nextInt();
+        scanner.nextLine();
+        Message Message;
+        for (int i = 0; i < num; i++)
+            Message = createMessage(scanner);
+        Object msg = null;
+            if (msg != null) {
+                displayMessageDetails((Message) msg);
+                if (sentCount < MAX_MESSAGES) sentMessages[sentCount++] =(Message) msg;
+                totalSent++;
+            }
+        System.out.println("Total messages sent: " + totalSent ); 
+    }
+    
+    private static Message createMessage(Scanner scanner) {
+        Random rand = new Random();
+        String id = String.format("%010d", rand.nextInt(1_000_000_000));
+        
+        System.out.println("Enter recipient's cell (+code, 9 digits): ");
+        String rec = scanner.nextLine().trim();
+        if (!rec.startsWith("+") || rec.length() < 2 || !rec.substring(1).matches("\\d+")) {
+            System.out.println("Invalid number. Discarding message."); 
+            return null;
+            
+        }
+        System.out.println("Enter your message (<=50 chars): ");
+        String txt = scanner.nextLine();
+        if (txt.length() >50) {
+            System.out.println("Message too long. Discarded. ");
+            return null;
+            
+        }
+        //Compute Hash
+       String[] words = txt.trim().split("\\s+");
+       String first = words.length >0 ? words[0].toUpperCase() : "";
+       String last = words.length >0 ? words[words.length - 1].toUpperCase() : "";
+       String hash =String.format("%02d:%s%s", Integer.parseInt(id.substring(0,2)),last);
+       
+        System.out.println("1 = Send 2 = Discard");
+        int ch;
+        try {
+            ch = Integer.parseInt(scanner.nextLine());
+        } catch (Exception e) {
+            ch = 2;
+        } 
+        
+        if (ch == 1) {
+            System.out.println("Message sent");
+            return new Message(id, rec, txt, hash);
+        } else {
+            System.out.println("Message not sent");
+            return null;
+        }
+          
+    } 
+    
+    private static void displayMessageDetails(Message m) {
+        String details = String.format("ID: %s\nHash: %s\nTo: %s\nMsg: %s", m.getMessageID(), m.getMessageHash(), m.getRecipient(), m.getMessage());
+        JOptionPane.showMessageDialog(null, details, "Message Details", JOptionPane.INFORMATION_MESSAGE);
+        
+    } 
+    
+    private static void showRecentMessages() {
+        if (sentCount == 0) {
+            System.out.println("No message sent yet");
+            return;
+        } 
+        
+        System.out.println("Recently sent messages");
+        for (int i = 0; i< sentCount; i++) {
+            Message m = sentMessages[i];
+            System.out.println("- " + m.getMessage() + " to " + m.getRecipient());
+        }
+        
+    }
+    
+    
+  
+}
