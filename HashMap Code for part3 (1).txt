@@ -1,0 +1,296 @@
+package part3;
+
+import java.util.*;
+
+public class PART3 {
+    static HashMap<String, Task> taskMap = new HashMap<>();
+    static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        // Sample data (in real case, get from user or file)
+        taskMap.put("LOG001", new Task("Alice Smith", "Login Feature", "LOG001", "Done", 5));
+        taskMap.put("PAY002", new Task("Bob Jones", "Payment Module", "PAY002", "In Progress", 8));
+
+        while (true) {
+            System.out.println("""
+                Enter:
+                a. View all tasks with status 'Done'
+                b. View developer of longest task
+                c. Search for a task
+                d. View tasks by developer
+                e. Delete a task
+                f. Display report
+                q. Quit
+                """);
+            String choice = scanner.nextLine().toLowerCase();
+
+            switch (choice) {
+                case "a" -> doneTasks();
+                case "b" -> longestTask();
+                case "c" -> {
+                    System.out.print("Enter task name to search: ");
+                    String name = scanner.nextLine();
+                    searchTask(name);
+                }
+                case "d" -> {
+                    System.out.print("Enter developer's full name: ");
+                    String dev = scanner.nextLine();
+                    developerTasks(dev);
+                }
+                case "e" -> {
+                    System.out.print("Enter task ID to delete: ");
+                    String id = scanner.nextLine();
+                    deleteTask(id);
+                }
+                case "f" -> displayReport();
+                case "q" -> {
+                    System.out.println("Exiting...");
+                    return;
+                }
+                default -> System.out.println("Invalid input.");
+            }
+        }
+    }
+
+    public static void doneTasks() {
+        boolean found = false;
+        for (Task task : taskMap.values()) {
+            if (task.status.equalsIgnoreCase("Done")) {
+                System.out.println(task);
+                found = true;
+            }
+        }
+        if (!found) System.out.println("No tasks with status 'Done'.");
+    }
+
+    public static void longestTask() {
+        Task longest = null;
+        for (Task task : taskMap.values()) {
+            if (longest == null || task.duration > longest.duration) {
+                longest = task;
+            }
+        }
+        if (longest != null) {
+            System.out.println("Longest Task:");
+            System.out.println(longest);
+        } else {
+            System.out.println("No tasks found.");
+        }
+    }
+
+    public static void searchTask(String taskName) {
+        for (Task task : taskMap.values()) {
+            if (task.taskName.equalsIgnoreCase(taskName)) {
+                System.out.println("Task found:");
+                System.out.println(task);
+                return;
+            }
+        }
+        System.out.println("Task not found.");
+    }
+
+    public static void developerTasks(String developerName) {
+        boolean found = false;
+        for (Task task : taskMap.values()) {
+            if (task.developerName.equalsIgnoreCase(developerName)) {
+                System.out.println(task.taskName + " - " + task.status);
+                found = true;
+            }
+        }
+        if (!found) System.out.println("No tasks found for " + developerName);
+    }
+
+    public static void deleteTask(String taskID) {
+        if (taskMap.containsKey(taskID)) {
+            taskMap.remove(taskID);
+            System.out.println("Task with ID '" + taskID + "' deleted.");
+        } else {
+            System.out.println("Task not found.");
+        }
+    }
+
+    public static void displayReport() {
+        if (taskMap.isEmpty()) {
+            System.out.println("No tasks available.");
+            return;
+        }
+        for (Task task : taskMap.values()) {
+            System.out.println(task);
+        }
+    }
+}
+
+
+
+
+
+package part3;
+
+import java.util.HashMap;
+import java.util.Scanner;
+
+public class TaskDetails {
+    private static Scanner scanner = new Scanner(System.in);
+    private static HashMap<String, Task> taskMap = new HashMap<>();
+    private static int totalHours = 0;
+
+    public int welcomeAndChooseOption(boolean login) {
+        int chosenOption = 0;
+
+        if (login) {
+            System.out.println("Welcome to EasyKanban");
+
+            do {
+                System.out.println("\nPLEASE SELECT AN OPTION:");
+                System.out.println("1) Add tasks");
+                System.out.println("2) Show Report");
+                System.out.println("3) Quit");
+                System.out.print("Your choice: ");
+                chosenOption = Integer.parseInt(scanner.nextLine());
+
+                switch (chosenOption) {
+                    case 1 -> addTasks();
+                    case 2 -> PART3.loadTasks(taskMap);
+                    case 3 -> System.out.println("Exiting application...");
+                    default -> System.out.println("Invalid choice. Please try again.");
+                }
+            } while (chosenOption != 3);
+        }
+
+        return chosenOption;
+    }
+
+    public void addTasks() {
+        System.out.print("Enter the number of tasks you want to add: ");
+        int numTasks = Integer.parseInt(scanner.nextLine());
+
+        for (int i = 0; i < numTasks; i++) {
+            System.out.println("\nTask #" + (i + 1));
+
+            System.out.print("Enter task name: ");
+            String taskName = scanner.nextLine();
+
+            System.out.print("Enter developer full name: ");
+            String developerName = scanner.nextLine();
+
+            String taskDescription;
+            do {
+                System.out.print("Enter task description (max 50 characters): ");
+                taskDescription = scanner.nextLine();
+                if (taskDescription.length() > 50) {
+                    System.out.println("Too long! Please shorten the description.");
+                }
+            } while (taskDescription.length() > 50);
+
+            System.out.print("Enter task duration in hours: ");
+            int duration = Integer.parseInt(scanner.nextLine());
+
+            System.out.println("Choose task status:");
+            System.out.println("1. To Do\n2. Doing\n3. Done");
+            int statusChoice = Integer.parseInt(scanner.nextLine());
+            String taskStatus = switch (statusChoice) {
+                case 1 -> "To Do";
+                case 2 -> "Doing";
+                case 3 -> "Done";
+                default -> "To Do";
+            };
+
+            String taskID = Task.createTaskID(developerName, taskName, i);
+            Task task = new Task(developerName, taskName, taskID, taskStatus, duration);
+            taskMap.put(taskID, task);
+
+            System.out.println("\nTask Captured:\n" + task);
+
+            totalHours += duration;
+        }
+
+        System.out.println("Total estimated time to complete all tasks: " + totalHours + " hours");
+    }
+} 
+
+
+
+
+
+package part3;
+
+import java.util.HashMap;
+
+public class Task {
+    private String developerName;
+    private String taskName;
+    private String taskID;
+    private String taskStatus;
+    private int duration;
+
+    public Task(String developerName, String taskName, int taskNumber, String taskStatus, int duration) {
+        this.developerName = developerName;
+        this.taskName = taskName;
+        this.taskID = createTaskID(developerName, taskName, taskNumber);
+        this.taskStatus = taskStatus;
+        this.duration = duration;
+    }
+
+    public String getDeveloperName() {
+        return developerName;
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public String getTaskID() {
+        return taskID;
+    }
+
+    public String getTaskStatus() {
+        return taskStatus;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public static boolean checkTaskDescription(String description) {
+        return description.length() <= 50;
+    }
+
+    public static String createTaskID(String developerNames, String taskName, int taskNumber) {
+        String lastThree = "";
+
+        for (int i = 0; i < developerNames.length(); i++) {
+            if (Character.isWhitespace(developerNames.charAt(i))) {
+                lastThree = developerNames.substring(i - 3, i);
+            }
+        }
+
+        String id = taskName.substring(0, 2) + ":" + taskNumber + ":" + lastThree;
+        return id.toUpperCase();
+    }
+
+    @Override
+    public String toString() {
+        return "Task ID: " + taskID + "\n"
+             + "Task Name: " + taskName + "\n"
+             + "Developer: " + developerName + "\n"
+             + "Status: " + taskStatus + "\n"
+             + "Duration: " + duration + " hours";
+    }
+
+    // Example usage with HashMap
+    public static void main(String[] args) {
+        HashMap<String, Task> taskMap = new HashMap<>();
+
+        Task task1 = new Task("John Smith", "CodeLogin", 0, "To Do", 5);
+        Task task2 = new Task("Jane Doe", "DesignUI", 1, "Done", 8);
+
+        taskMap.put(task1.getTaskID(), task1);
+        taskMap.put(task2.getTaskID(), task2);
+
+        // Display all tasks
+        for (Task task : taskMap.values()) {
+            System.out.println(task);
+            System.out.println("------------------------");
+        }
+    }
+}
